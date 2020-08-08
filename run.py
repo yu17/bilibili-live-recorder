@@ -20,10 +20,10 @@ class BiliBiliLiveRecorder(BiliBiliLive):
     def check(self, interval):
         while True:
             try:
-                room_info = self.get_room_info()
-                if room_info['status']:
-                    self.inform(room_id=self.room_id,desp=room_info['roomname'])
-                    self.print(self.room_id, room_info['roomname'])
+                self.room_info = self.get_room_info()
+                if self.room_info['status']:
+                    self.inform(room_id=self.room_id,desp=self.room_info['roomname'])
+                    self.print(self.room_id, self.room_info['roomname'])
                     break
                 else:
                     self.print(self.room_id, '等待开播')
@@ -32,7 +32,20 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             time.sleep(interval)
         return self.get_live_urls()
 
-    def record(self, record_url, output_filename):
+    def check_running(self, interval):
+        while True:
+            try:
+                self.room_info = self.get_room_info()
+                if self.room_info['status']:
+                    self.print(self.room_id, self.room_info['roomname'])
+                else:
+                    break
+            except Exception as e:
+                self.print(self.room_id, 'Error:' + str(e))
+                break
+            time.sleep(interval)
+
+    def record(self, record_url, output_filename, interval):
         try:
             self.print(self.room_id, '√ 正在录制...' + self.room_id)
             headers = dict()
@@ -40,19 +53,24 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'
             headers['Referer'] = re.findall(r'(https://.*\/).*\.flv', record_url)[0]
             resp = requests.get(record_url, stream=True, headers=headers)
+            status_checker = mp(target=self.check_running,args=(interval,))
+            status_checker.start()
             with open(output_filename, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=1024):
                     f.write(chunk) if chunk else None
+            status_checker.terminate()
+            status_checker.join()
         except Exception as e:
             self.print(self.room_id, 'Error while recording:' + str(e))
+            status_checker.join()
 
     def run(self):
         while True:
             try:
                 urls = self.check(interval=self.check_interval)
-                filename = utils.generate_filename(self.room_id)
+                filename = utils.generate_filename(self.room_id,self.room_info['roomname'])
                 c_filename = os.path.join(os.getcwd(), 'files', filename)
-                self.record(urls[0], c_filename)
+                self.record(urls[0], c_filename, self.check_interval)
                 self.print(self.room_id, '录制完成' + c_filename)
             except Exception as e:
                 self.print(self.room_id, 'Error while checking or recording:' + str(e))
