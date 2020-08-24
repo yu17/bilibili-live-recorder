@@ -1,6 +1,5 @@
 import time
 import requests
-import config
 
 
 def get_current_time(time_format):
@@ -17,13 +16,13 @@ def generate_filename(room_id, room_name):
     return '_'.join(data.values()) + '.flv'
 
 
-def inform(room_id, desp=''):
-    if config.enable_inform:
+def inform(room_id, desp, enable_inform = False, inform_url = ''):
+    if enable_inform:
         param = {
             'text': '直播间：{} 开始直播啦！'.format(room_id),
             'desp': desp,
         }
-        resp = requests.get(url=config.inform_url, params=param)
+        resp = requests.get(url=inform_url, params=param)
         print_log(room_id=room_id, content='通知完成！') if resp.status_code == 200 else None
     else:
         pass

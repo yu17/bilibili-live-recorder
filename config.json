@@ -1,0 +1,17 @@
+{
+	"default":{
+		"enable_inform": false,
+		"inform_url": "",
+		"check_interval": 300,
+		"saving_path": "files",
+		"use_cookies": true,
+		"cookies_file": "cookies.txt",
+		"capture_danmaku": true
+	},
+	"rooms":[
+		{
+			"room_id": 12235923,
+			"saving_path": "files/KaguraMea"
+		}
+	]
+}
