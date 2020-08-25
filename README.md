@@ -25,14 +25,14 @@ python run.py [-c <CONFIG_FILE>]
 |`use_cookies`| boolean | 是否使用cookies文件。详见下文。 |
 |`cookies_file`| string | 若使用cookies文件，填入cookies文件的路径。 |
 |`capture_danmaku`| boolean | 是否录制弹幕。 |
-| | | |
+
 注意，不使用的设置可以填空字符串`""`，但不要从配置文件里删除这项设置。
 
 `rooms`是一个`list`，罗列每个你想要监听/录制的房间。每个房间需设置房间号:
 | Object | Type | Explanation | 
 |--------|------|-------|
 |`room_id  `| integer | (必填)直播间号，短号或原房间号均可。 |
-| | | |
+
 除此之外，`default`中的设置均可选填，以对不同房间做不同设置。没有填的设置会自动使用`default`中的值。
 
 ### 关于cookies:
