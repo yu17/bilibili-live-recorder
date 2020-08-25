@@ -13,28 +13,20 @@ def generate_filename(room_id, room_name):
     data['c_time'] = get_current_time('%Y%m%d_%H%M')
     data['room_id'] = room_id
     data['roomname'] = room_name
-    return '_'.join(data.values()) + '.flv'
+    return '_'.join(data.values())
 
 
-def inform(room_id, desp, enable_inform = False, inform_url = ''):
-    if enable_inform:
-        param = {
-            'text': '直播间：{} 开始直播啦！'.format(room_id),
-            'desp': desp,
-        }
-        resp = requests.get(url=inform_url, params=param)
-        print_log(room_id=room_id, content='通知完成！') if resp.status_code == 200 else None
-    else:
-        pass
+def inform(room_id, desp, inform_url = ''):
+    param = {
+        'text': '直播间：{} 开始直播啦！'.format(room_id),
+        'desp': desp,
+    }
+    resp = requests.get(url=inform_url, params=param)
+    print_log(room_id=room_id, content='通知完成！') if resp.status_code == 200 else None
 
 
 def print_log(room_id='None', content='None'):
     brackets = '[{}]'
     time_part = brackets.format(get_current_time('%Y-%m-%d %H:%M:%S'))
-    room_part = brackets.format('直播间: ' + room_id)
+    room_part = brackets.format('直播间: ' + str(room_id))
     print(time_part, room_part, content)
-
-
-if __name__ == '__main__':
-    print(generate_filename('1075'))
-    print_log(content='开始录制')

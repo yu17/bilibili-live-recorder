@@ -10,8 +10,11 @@
 	},
 	"rooms":[
 		{
-			"room_id": 12235923,
-			"saving_path": "files/KaguraMea"
+			"room_id": 3,
+			"saving_path": "files"
+		},
+		{
+			"room_id": 1
 		}
 	]
 }
