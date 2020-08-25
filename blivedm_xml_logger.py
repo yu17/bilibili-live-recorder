@@ -41,8 +41,8 @@ class BLiveXMLlogger(blivedm.BLiveClient):
         self.async_proc.start()
 
     def terminate(self):
-        #self.async_loop.stop()
         self.async_proc.terminate()
+        self.async_proc.join()
         xmltail = '''</i>'''
         self.saving_file.write(xmltail)
         self.saving_file.close()

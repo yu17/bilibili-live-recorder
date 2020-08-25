@@ -4,8 +4,8 @@
 		"inform_url": "",
 		"check_interval": 300,
 		"saving_path": "files",
-		"use_cookies": true,
-		"cookies_file": "cookies.txt",
+		"use_cookies": false,
+		"cookies_file": "",
 		"capture_danmaku": true
 	},
 	"rooms":[
