@@ -2,7 +2,9 @@
 
 Forked from [zachMelody/bilibili-live-recorder](https://github.com/zachMelody/bilibili-live-recorder).
 
-[B站](https://ilibili.com)直播录播姬。支持在未开播时监听房间，并在开播时自动开始录制。支持源视频流录制，弹幕录制。支持使用cookies。支持使用[Server酱](http://sc.ftqq.com)提醒直播开始。支持多房间同时监听/录制，并且每个房间的录制设定可以独立进行配置。
+This is a live stream recorder for Bilibili Live (live.bilibili.com). Supports recording from multiple streamers simultaneously, danmaku recoding, using cookies, and ServerChan (http://sc.ftqq.com) push service.
+
+[B站](https://bilibili.com)直播录播姬。支持在未开播时监听房间，并在开播时自动开始录制。支持源视频流录制，弹幕录制。支持使用cookies。支持使用[Server酱](http://sc.ftqq.com)提醒直播开始。支持多房间同时监听/录制，并且每个房间的录制设定可以独立进行配置。
 
 从[zachMelody/bilibili-live-recorder](https://github.com/zachMelody/bilibili-live-recorder)fork而来。重写了主程序`run.py`，添加了弹幕录制和使用cookies的功能，并且移除了python配置文件，改用json格式的配置文件。
 

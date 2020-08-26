@@ -10,11 +10,13 @@
 	},
 	"rooms":[
 		{
-			"room_id": 3,
-			"saving_path": "files"
+			"room_id": 1,
+			"check_interval": 60,
+			"saving_path": "otherfiles",
+			"capture_danmaku": false
 		},
 		{
-			"room_id": 1
+			"room_id": 3
 		}
 	]
 }
