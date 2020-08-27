@@ -1,7 +1,7 @@
 from Live import BiliBiliLive
 import blivedm_xml_logger as dmxml
 import json
-import os, sys
+import os, sys, signal
 import requests
 import time
 import utils
@@ -77,8 +77,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             self.recording_lock.release()
 
     def run(self):
-        while True:
-            try:
+        try:
+            while True:
                 res = self.check()
                 if isinstance(res, list):
                     self.fname = utils.generate_filename(self.room_id,self.room_info['roomname'])
@@ -92,11 +92,21 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                     if self.recording_lock.acquire(timeout = self.check_interval):
                         self.stream_rec_thread.join()
                         self.dmlogger.terminate()
-                        self.recording_lock.release()
                 else:
                     time.sleep(self.check_interval)
-            except Exception as e:
-                utils.print_log(self.room_id, 'Error while checking or recording:' + str(e))
+        except Exception as e:
+            utils.print_log(self.room_id, 'Error while checking or recording:' + str(e))
+        finally:
+            if self.recording_lock.locked():
+                self.dmlogger.terminate()
+
+def signal_handler(sig, frame):
+    glob_vars = frame.f_back.f_back.f_back.f_locals
+    if 'recording_rooms' in glob_vars.keys():
+        for i in glob_vars['room_processors']:
+            i.terminate()
+            i.join()
+    exit(0)
 
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1] == '-c':
@@ -106,15 +116,16 @@ if __name__ == '__main__':
     else:
         print('Usage: ', sys.argv[0], ' [-c CONFIG_FILE]')
         exit(1)
-
     if not os.path.exists(config_path):
         print(config_path,' does not exist!')
         exit(2)
 
+    signal.signal(signal.SIGINT, signal_handler)
+
     config = json.load(open(config_path,'r'))
     default = config['default']
 
-    recording_rooms = [multiprocessing.Process(target=BiliBiliLiveRecorder(
+    recording_rooms = [BiliBiliLiveRecorder(
         room['room_id'],
         room['enable_inform'] if 'enable_inform' in room.keys() else default['enable_inform'],
         room['inform_url'] if 'inform_url' in room.keys() else default['inform_url'],
@@ -123,8 +134,11 @@ if __name__ == '__main__':
         room['use_cookies'] if 'use_cookies' in room.keys() else default['use_cookies'],
         room['cookies_file'] if 'cookies_file' in room.keys() else default['cookies_file'],
         room['capture_danmaku'] if 'capture_danmaku' in room.keys() else default['capture_danmaku']
-        ).run) for room in config['rooms']]
-    for i in recording_rooms:
+        ) for room in config['rooms']]
+    
+    room_processors = [multiprocessing.Process(target=i.run) for i in recording_rooms]
+
+    for i in room_processors:
         i.start()
-    for i in recording_rooms:
+    for i in room_processors:
         i.join()
