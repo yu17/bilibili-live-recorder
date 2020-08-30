@@ -8,11 +8,8 @@ import blivedm.blivedm as blivedm
 import multiprocessing
 
 class BLiveXMLlogger(blivedm.BLiveClient):
-    def __init__(self, room_id, uid=0, heartbeat_interval=30, ssl=True, loop=None, saving_path='sample.xml'):
+    def __init__(self, room_id, uid=0, heartbeat_interval=30, ssl=True, loop=None):
         super().__init__(room_id, uid=uid, heartbeat_interval=heartbeat_interval, ssl=ssl, loop=loop)
-        self.saving_path = saving_path
-        self.init_time = time.time()
-
         self.saving_file = None
         self.async_proc = None
 
@@ -32,7 +29,8 @@ class BLiveXMLlogger(blivedm.BLiveClient):
         self.saving_file.write(f'<d p="{curtime-self.init_time},5,35,{color},{int(curtime)},0,{message.uid},0">{xmlutil.escape(message.uname)}(¥{message.price}): {xmlutil.escape(message.message)}</d>')
         self.saving_file.flush()
 
-    def init(self):
+    def init(self, saving_path='sample.xml'):
+        self.saving_path = saving_path
         xmlheader = '''<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>0</chatid><mission>0</mission><maxlimit>10000000</maxlimit><state>0</state><real_name>0</real_name><source>k-v</source>'''
         self.saving_file = open(self.saving_path,'w')
         self.saving_file.write(xmlheader)
@@ -54,8 +52,8 @@ class BLiveXMLlogger(blivedm.BLiveClient):
 
 # sample main() to run the logger
 if __name__ == '__main__':
-    logger = BLiveXMLlogger(21449083,saving_path = 'sample.xml')
-    logger.init()
+    logger = BLiveXMLlogger(3)
+    logger.init(saving_path = 'sample.xml')
     logger.run()
     time.sleep(10)
     logger.terminate()

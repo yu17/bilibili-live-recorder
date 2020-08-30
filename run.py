@@ -18,10 +18,7 @@ class BiliBiliLiveRecorder(BiliBiliLive):
         self.inform_url = inform_url
         self.last_inform = 0
         self.check_interval = check_interval
-        if os.path.isabs(saving_path):
-            self.saving_path = saving_path
-        else:
-            self.saving_path = os.path.join(os.getcwd(), saving_path)
+        self.saving_path = saving_path if os.path.isabs(saving_path) else os.path.join(os.getcwd(), saving_path)
         if not os.path.exists(saving_path):
             utils.print_log(self.room_id, f'Warning: The saving path does not exist! Creating directories: {self.saving_path}')
             try:
@@ -35,13 +32,14 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             except Exception as e:
                 utils.print_log(self.room_id, f'Error when loading cookies: {str(e)}\nWarning:  Continuing without cookies!')
                 self.cookies = None
+        self.capture_danmaku = capture_danmaku
         self.recording_lock = threading.Lock()
 
     def check(self):
         try:
             self.room_info = self.get_room_info()
             if self.room_info['status']:
-                utils.print_log(self.room_id, self.room_info['roomname'])
+                utils.print_log(self.room_id, self.room_info['roomname'] + 'lock: ' + str(self.recording_lock.locked()))
                 if self.recording_lock.locked():
                     return True
                 else:
@@ -82,26 +80,37 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                 res = self.check()
                 if isinstance(res, list):
                     self.fname = utils.generate_filename(self.room_id,self.room_info['roomname'])
-                    self.dmlogger = dmxml.BLiveXMLlogger(self.room_id, uid=0, saving_path = os.path.join(self.saving_path, self.fname+'.xml'))
-                    self.dmlogger.init()
-                    self.dmlogger.run()
+                    if self.capture_danmaku:
+                        self.dmlogger = dmxml.BLiveXMLlogger(self.room_id, uid=0)
+                        self.dmlogger.init(saving_path = os.path.join(self.saving_path, self.fname+'.xml'))
+                        self.dmlogger.run()
                     self.stream_rec_thread = threading.Thread(target = self.record, args = (res[0],))
                     self.stream_rec_thread.start()
                     time.sleep(self.check_interval)
                 elif res:
                     if self.recording_lock.acquire(timeout = self.check_interval):
                         self.stream_rec_thread.join()
-                        self.dmlogger.terminate()
+                        if self.capture_danmaku:
+                            self.dmlogger.terminate()
+                            del self.dmlogger
+                        self.recording_lock.release()
                 else:
                     time.sleep(self.check_interval)
         except Exception as e:
             utils.print_log(self.room_id, 'Error while checking or recording:' + str(e))
         finally:
-            if self.recording_lock.locked():
+            if self.recording_lock.locked() and self.capture_danmaku:
                 self.dmlogger.terminate()
+                del self.dmlogger
 
 def signal_handler(sig, frame):
     glob_vars = frame.f_back.f_back.f_back.f_locals
+    #worker = frame.f_back.f_locals['self']
+    #if isinstance(worker, BiliBiliLive):
+    #    if worker.dmlogger:
+    #        worker.dmlogger.terminate()
+    #    exit(0)
+    #print(frame.f_back.f_locals.keys(),type(frame.f_locals['self']),type(frame.f_back.f_locals['self']))
     if 'recording_rooms' in glob_vars.keys():
         for i in glob_vars['room_processors']:
             i.terminate()
