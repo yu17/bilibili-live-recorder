@@ -2,14 +2,16 @@ import asyncio
 import os,time
 import signal,sys
 import xml.sax.saxutils as xmlutil
+from concurrent.futures import CancelledError
+import multiprocessing
 
 import blivedm.blivedm as blivedm
-
-import multiprocessing
+import utils
 
 class BLiveXMLlogger(blivedm.BLiveClient):
     def __init__(self, room_id, uid=0, heartbeat_interval=30, ssl=True, loop=None):
         super().__init__(room_id, uid=uid, heartbeat_interval=heartbeat_interval, ssl=ssl, loop=loop)
+        self.room_id_log = room_id
         self.saving_file = None
         self.async_proc = None
 
@@ -29,7 +31,13 @@ class BLiveXMLlogger(blivedm.BLiveClient):
         self.saving_file.write(f'<d p="{curtime-self.init_time},5,35,{color},{int(curtime)},0,{message.uid},0">{xmlutil.escape(message.uname)}(¥{message.price}): {xmlutil.escape(message.message)}</d>')
         self.saving_file.flush()
 
-    def init(self, saving_path='sample.xml'):
+    def run_cancellable(self):
+        try:
+            self.async_loop.run_until_complete(self.start())
+        except CancelledError:
+            pass
+
+    def run(self, saving_path='sample.xml'):
         self.saving_path = saving_path
         xmlheader = '''<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>0</chatid><mission>0</mission><maxlimit>10000000</maxlimit><state>0</state><real_name>0</real_name><source>k-v</source>'''
         self.saving_file = open(self.saving_path,'w')
@@ -37,26 +45,20 @@ class BLiveXMLlogger(blivedm.BLiveClient):
         self.saving_file.flush()
         self.init_time = time.time()
 
-    def run(self):
         self.async_loop = asyncio.get_event_loop()
-        self.async_proc = multiprocessing.Process(target=self.async_loop.run_until_complete,args=(self.start(),))
+        self.async_proc = multiprocessing.Process(target=self.run_cancellable)
         self.async_proc.start()
 
     def terminate(self):
-        self.async_loop.stop()
+        if self.is_running:
+            future = self.stop()
+            future.add_done_callback(lambda _future: asyncio.ensure_future(self.close()))
+        else:
+            asyncio.ensure_future(self.close())
+        #self.async_loop.stop()
         self.async_proc.terminate()
         self.async_proc.join()
         xmltail = '''</i>'''
         self.saving_file.write(xmltail)
         self.saving_file.close()
-
-# sample main() to run the logger
-if __name__ == '__main__':
-    logger = BLiveXMLlogger(3)
-    logger.init(saving_path = 'sample.xml')
-    logger.run()
-    time.sleep(10)
-    logger.terminate()
-
-#asyncio.get_event_loop().run_until_complete(logger.run())
-    
+        utils.print_log(self.room_id_log, '弹幕保存完成'+self.saving_path)

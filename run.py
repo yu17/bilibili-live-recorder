@@ -39,7 +39,7 @@ class BiliBiliLiveRecorder(BiliBiliLive):
         try:
             self.room_info = self.get_room_info()
             if self.room_info['status']:
-                utils.print_log(self.room_id, self.room_info['roomname'] + 'lock: ' + str(self.recording_lock.locked()))
+                utils.print_log(self.room_id, self.room_info['roomname'])
                 if self.recording_lock.locked():
                     return True
                 else:
@@ -82,12 +82,10 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                     self.fname = utils.generate_filename(self.room_id,self.room_info['roomname'])
                     if self.capture_danmaku:
                         self.dmlogger = dmxml.BLiveXMLlogger(self.room_id, uid=0)
-                        self.dmlogger.init(saving_path = os.path.join(self.saving_path, self.fname+'.xml'))
-                        self.dmlogger.run()
+                        self.dmlogger.run(saving_path = os.path.join(self.saving_path, self.fname+'.xml'))
                     self.stream_rec_thread = threading.Thread(target = self.record, args = (res[0],))
                     self.stream_rec_thread.start()
-                    time.sleep(self.check_interval)
-                elif res:
+                if res:
                     if self.recording_lock.acquire(timeout = self.check_interval):
                         self.stream_rec_thread.join()
                         if self.capture_danmaku:
@@ -102,6 +100,7 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             if self.recording_lock.locked() and self.capture_danmaku:
                 self.dmlogger.terminate()
                 del self.dmlogger
+                self.recording_lock.release()
 
 def signal_handler(sig, frame):
     glob_vars = frame.f_back.f_back.f_back.f_locals
