@@ -12,7 +12,7 @@ def generate_filename(room_id, room_name):
     data = dict()
     data['c_time'] = get_current_time('%Y%m%d_%H%M')
     data['room_id'] = room_id
-    data['roomname'] = room_name
+    data['roomname'] = room_name.replace('/','-').replace('\\','-')
     return '_'.join(data.values())
 
 
