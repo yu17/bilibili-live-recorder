@@ -65,7 +65,7 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'
             headers['Referer'] = re.findall(r'(https://.*\/).*\.flv', record_url)[0]
             resp = requests.get(record_url, stream=True, headers=headers)
-            with open(os.path.join(self.saving_path, self.fname+'.flv'), "wb") as f:
+            with open(os.path.join(self.saving_path, self.fname+'.flv'), "ab") as f:
                 for chunk in resp.iter_content(chunk_size=1024):
                     f.write(chunk) if chunk else None
         except Exception as e:

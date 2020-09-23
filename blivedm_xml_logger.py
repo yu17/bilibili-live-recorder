@@ -40,7 +40,7 @@ class BLiveXMLlogger(blivedm.BLiveClient):
     def run(self, saving_path='sample.xml'):
         self.saving_path = saving_path
         xmlheader = '''<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>0</chatid><mission>0</mission><maxlimit>10000000</maxlimit><state>0</state><real_name>0</real_name><source>k-v</source>'''
-        self.saving_file = open(self.saving_path,'w')
+        self.saving_file = open(self.saving_path,'a')
         self.saving_file.write(xmlheader)
         self.saving_file.flush()
         self.init_time = time.time()
