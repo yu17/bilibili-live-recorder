@@ -10,9 +10,10 @@ import multiprocessing, threading
 import urllib3
 urllib3.disable_warnings()
 
+# youtube-url https://www.youtube.com/embed/live_stream?channel=UC8NZiqKx6fsDT3AVcMiVFyA&autoplay=1
 
 class BiliBiliLiveRecorder(BiliBiliLive):
-    def __init__(self, room_id, enable_inform = False, inform_url = '', check_interval = 300, saving_path = 'files', use_cookies = False, cookies_file = None, capture_danmaku = True):
+    def __init__(self, room_id, enable_inform = False, inform_url = '', check_interval = 300, saving_path = 'files', use_cookies = False, cookies_file = None, capture_danmaku = True, capture_from_youtube = False, youtube_channel_id = ""):
         super().__init__(room_id)
         self.enable_inform = enable_inform
         self.inform_url = inform_url
@@ -33,6 +34,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                 utils.print_log(self.room_id, f'Error when loading cookies: {str(e)}\nWarning:  Continuing without cookies!')
                 self.cookies = None
         self.capture_danmaku = capture_danmaku
+        self.capture_from_youtube = capture_from_youtube
+        self.youtube_channel_id = youtube_channel_id
         self.recording_lock = threading.Lock()
 
     def check(self):
@@ -65,6 +68,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'
             headers['Referer'] = re.findall(r'(https://.*\/).*\.flv', record_url)[0]
             resp = requests.get(record_url, stream=True, headers=headers)
+            if not resp.ok:
+                raise Exception("Stream not available. Received code "+str(resp.status_code))
             with open(os.path.join(self.saving_path, self.fname+'.flv'), "ab") as f:
                 for chunk in resp.iter_content(chunk_size=1024):
                     f.write(chunk) if chunk else None
@@ -104,17 +109,21 @@ class BiliBiliLiveRecorder(BiliBiliLive):
 
 def signal_handler(sig, frame):
     glob_vars = frame.f_back.f_back.f_back.f_locals
-    #worker = frame.f_back.f_locals['self']
-    #if isinstance(worker, BiliBiliLive):
-    #    if worker.dmlogger:
-    #        worker.dmlogger.terminate()
-    #    exit(0)
-    #print(frame.f_back.f_locals.keys(),type(frame.f_locals['self']),type(frame.f_back.f_locals['self']))
+#    glob_vars = frame
+#    while glob_vars is not None and glob_vars.f_locals is not None and 'recording_rooms' not in glob_vars.f_locals.keys():
+#        glob_vars = glob_vars.f_back
+
+#    if glob_vars is not None and glob_vars.f_locals is not None and 'recording_rooms' in glob_vars.f_locals.keys():
+#        glob_vars = glob_vars.f_locals
+#        print(glob_vars['recording_rooms'])
     if 'recording_rooms' in glob_vars.keys():
         for i in glob_vars['room_processors']:
             i.terminate()
             i.join()
     exit(0)
+#    else:
+#        time.sleep(1)
+#        sys.exit(0)
 
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1] == '-c':
@@ -141,7 +150,9 @@ if __name__ == '__main__':
         room['saving_path'] if 'saving_path' in room.keys() else default['saving_path'],
         room['use_cookies'] if 'use_cookies' in room.keys() else default['use_cookies'],
         room['cookies_file'] if 'cookies_file' in room.keys() else default['cookies_file'],
-        room['capture_danmaku'] if 'capture_danmaku' in room.keys() else default['capture_danmaku']
+        room['capture_danmaku'] if 'capture_danmaku' in room.keys() else default['capture_danmaku'],
+        room['capture_from_youtube'] if 'capture_from_youtube' in room.keys() else default['capture_from_youtube'],
+        room['youtube_channel_id'] if 'youtube_channel_id' in room.keys() else default['youtube_channel_id']
         ) for room in config['rooms']]
     
     room_processors = [multiprocessing.Process(target=i.run) for i in recording_rooms]
@@ -150,3 +161,13 @@ if __name__ == '__main__':
         i.start()
     for i in room_processors:
         i.join()
+
+#    for proc in room_processors:
+#        proc.start()
+#    while True:
+#        for i,proc in enumerate(room_processors):
+#            if not proc.is_alive():
+#                print(recording_rooms[i].room_id,'is dead!!')
+#                proc.join()
+#                room_processors[i] = multiprocessing.Process(target=recording_rooms[i].run)
+#        time.sleep(300)

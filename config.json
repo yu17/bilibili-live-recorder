@@ -6,13 +6,15 @@
 		"saving_path": "files",
 		"use_cookies": false,
 		"cookies_file": "",
-		"capture_danmaku": true
+		"capture_danmaku": true,
+		"capture_from_youtube": false,
+		"youtube_channel_id": ""
 	},
 	"rooms":[
 		{
 			"room_id": 1,
 			"check_interval": 60,
-			"saving_path": "otherfiles",
+			"saving_path": "files",
 			"capture_danmaku": false
 		},
 		{
