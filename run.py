@@ -1,5 +1,6 @@
 from Live import BiliBiliLive
 import blivedm_xml_logger as dmxml
+import blivedm_lar_logger as dmlar
 import json
 import os, sys, signal
 import requests
@@ -88,6 +89,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                     if self.capture_danmaku:
                         self.dmlogger = dmxml.BLiveXMLlogger(self.room_id, uid=0)
                         self.dmlogger.run(saving_path = os.path.join(self.saving_path, self.fname+'.xml'))
+                        self.lalogger = dmlar.BLiveLARlogger(self.room_id, uid=0)
+                        self.lalogger.run(saving_path = os.path.join(self.saving_path, self.fname+'.lar'))
                     self.stream_rec_thread = threading.Thread(target = self.record, args = (res[0],))
                     self.stream_rec_thread.start()
                 if res:
@@ -96,6 +99,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
                         if self.capture_danmaku:
                             self.dmlogger.terminate()
                             del self.dmlogger
+                            self.lalogger.terminate()
+                            del self.lalogger
                         self.recording_lock.release()
                 else:
                     time.sleep(self.check_interval)
@@ -105,6 +110,8 @@ class BiliBiliLiveRecorder(BiliBiliLive):
             if self.recording_lock.locked() and self.capture_danmaku:
                 self.dmlogger.terminate()
                 del self.dmlogger
+                self.lalogger.terminate()
+                del self.lalogger
                 self.recording_lock.release()
 
 def signal_handler(sig, frame):
