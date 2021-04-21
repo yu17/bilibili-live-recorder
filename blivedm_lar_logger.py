@@ -23,21 +23,21 @@ class BLiveLARlogger(blivedm.BLiveClient):
 
     async def _on_receive_popularity(self, popularity: int):
         curtime = time.time()
-        self.saving_file.write(f'[{curtime*1000}][POP]({curtime-self.init_time}){popularity}\n')
+        self.saving_file.write(f'[{int(curtime*1000)}][POP]({curtime-self.init_time:.3f}){popularity}\n')
         self.saving_file.flush()
 
     async def _on_receive_danmaku(self, danmaku: blivedm.DanmakuMessage):
         curtime = danmaku.timestamp/1000
-        self.saving_file.write(f'[{danmaku.timestamp}][DANMAKU]({curtime-self.init_time},{danmaku.mode},{danmaku.font_size},{danmaku.color},{danmaku.msg_type})<{danmaku.uid},"{danmaku.uname}",{danmaku.user_level},{danmaku.ulevel_color},{danmaku.ulevel_rank},{danmaku.privilege_type},{danmaku.admin},{danmaku.vip},{danmaku.svip},{danmaku.urank},{danmaku.uname_color}><{danmaku.medal_name},{danmaku.medal_level},{danmaku.room_id},"{danmaku.runame}",{danmaku.mcolor},{danmaku.special_medal}>{xmlutil.escape(danmaku.msg)}\n')
+        self.saving_file.write(f'[{danmaku.timestamp}][DANMAKU]({curtime-self.init_time:.3f},{danmaku.mode},{danmaku.font_size},{danmaku.color},{danmaku.msg_type})<{danmaku.uid},"{xmlutil.escape(danmaku.uname)}",{danmaku.user_level},{danmaku.ulevel_color},{xmlutil.escape(str(danmaku.ulevel_rank))},{danmaku.privilege_type},{danmaku.admin},{danmaku.vip},{danmaku.svip},{danmaku.urank},{danmaku.uname_color}><{xmlutil.escape(danmaku.medal_name)},{danmaku.medal_level},{danmaku.room_id},"{xmlutil.escape(danmaku.runame)}",{danmaku.mcolor},{danmaku.special_medal}>{xmlutil.escape(danmaku.msg)}\n')
         self.saving_file.flush()
 
     async def _on_receive_gift(self, gift: blivedm.GiftMessage):
-        self.saving_file.write(f'[{gift.timestamp*1000}][GIFT]({gift.timestamp-self.init_time},{gift.gift_name},{gift.gift_id},{gift.gift_type},{gift.num},{gift.action},{gift.price})<{gift.uid},"{gift.uname}",{gift.guard_level}>{gift.coin_type},{gift.total_coin}\n')
+        self.saving_file.write(f'[{gift.timestamp*1000}][GIFT]({gift.timestamp-self.init_time:.3f},{gift.gift_name},{gift.gift_id},{gift.gift_type},{gift.num},{gift.action},{gift.price})<{gift.uid},"{gift.uname}",{gift.guard_level}>{gift.coin_type},{gift.total_coin}\n')
         self.saving_file.flush()
 
     async def _on_buy_guard(self, message: blivedm.GuardBuyMessage):
         curtime = time.time()
-        self.saving_file.write(f'[{curtime*1000}][GUARD]({curtime-self.init_time},{message.gift_name},{message.gift_id},{message.num},{message.price})<{message.uid},"{message.username}",{message.guard_level}>{message.start_time},{message.end_time}\n')
+        self.saving_file.write(f'[{int(curtime*1000)}][GUARD]({curtime-self.init_time:.3f},{message.gift_name},{message.gift_id},{message.num},{message.price})<{message.uid},"{xmlutil.escape(message.username)}",{message.guard_level}>{message.start_time},{message.end_time}\n')
         self.saving_file.flush()
 
     async def _on_super_chat(self, message: blivedm.SuperChatMessage):
@@ -45,7 +45,7 @@ class BLiveLARlogger(blivedm.BLiveClient):
         curtime = message.start_time
         color = int(message.background_color[1:],16)
         pricecolor = int(message.background_price_color[1:],16)
-        self.saving_file.write(f'[{curtime*1000}][SUPERCHAT]({curtime-self.init_time},{message.gift_name},{message.gift_id},{color},{pricecolor},{message.start_time},{message.end_time},{message.time},{message.price})<{message.uid},"{message.uname}",{message.user_level},{message.guard_level}>{xmlutil.escape(message.message)}\n')
+        self.saving_file.write(f'[{curtime*1000}][SUPERCHAT]({curtime-self.init_time:.3f},{message.gift_name},{message.gift_id},{color},{pricecolor},{message.start_time},{message.end_time},{message.time},{message.price})<{message.uid},"{xmlutil.escape(message.uname)}",{message.user_level},{message.guard_level}>{xmlutil.escape(message.message)}\n')
         self.saving_file.flush()
 
     def run_cancellable(self):
