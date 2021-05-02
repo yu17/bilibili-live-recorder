@@ -198,10 +198,10 @@ class LARParse:
     def stats_genreport_public(self,filename):
         # Real time axis. Unused for now.
         rbasetime = dt.datetime.fromtimestamp(self.abstime_start//1000//60*60,tz=dt.timezone(dt.timedelta(hours=8)))
-        rx=[rbasetime+dt.timedelta(seconds=i) for i in range(0,(self.max_trend_len)*self.resolution,self.resolution)]
+        rx=np.array([rbasetime+dt.timedelta(seconds=i) for i in range(0,(self.max_trend_len)*self.resolution,self.resolution)])
         # Fake time axis starting from EPOCH time 0(UTC).
         basetime = dt.datetime.fromtimestamp(0,tz=dt.timezone.utc)
-        x=[basetime+dt.timedelta(seconds=i) for i in range(0,(self.max_trend_len)*self.resolution,self.resolution)]
+        x=np.array([basetime+dt.timedelta(seconds=i) for i in range(0,(self.max_trend_len)*self.resolution,self.resolution)])
         y0=[0]*len(x)
         y1=np.array(self.trend_danmaku)
         y6=np.array(self.trend_pop)/self.trend_pop_count
@@ -217,6 +217,8 @@ class LARParse:
         danmaku.grid(True,which='minor',axis='x',color='lightgray',linestyle='--')
         danmaku.grid(True,which='major',axis='y',color='lightgray',linestyle='--')
         danmaku.legend(loc='upper left')
+        #danmaku.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M',tz=dt.timezone.utc))
+        danmaku.xaxis.set_ticks([])
         income=danmaku.twinx()
         income.plot(x,y6,label='人气')
         income.xaxis.set_major_locator(mdates.MinuteLocator(byminute=range(0,60,self.xtick_width)))
@@ -225,7 +227,14 @@ class LARParse:
         income.set_ylim(bottom=0)
         income.set_ylabel("人气")
         income.legend(loc='upper right')
-        danmaku.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M',tz=dt.timezone.utc))
+        income.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M',tz=dt.timezone.utc))
+        # Recompute lower x axis labels. Not in use right now.
+        #lastpivot_timestamp = rx[0]
+        #for timestamp in self.timestamp_list[1:]:
+        #    pivot = np.argmax(rx>dt.datetime.fromtimestamp(timestamp//1000,tz=dt.timezone(dt.timedelta(hours=8))))
+        #    diff = dt.timedelta(seconds=86400)-(rx[pivot]-lastpivot_timestamp)
+        #    x[pivot:] += diff
+        #    lastpivot_timestamp = rx[pivot]
         rtime=income.twiny()
         rtime.set_xlim(left=rx[0],right=rx[-1])
         rtime.set_ylim(bottom=0)
@@ -242,7 +251,7 @@ class LARParse:
             with open(filename,'r') as f:
                 record_match = self.stampreg.match(f.readline())
                 timestamps.append(int(int(record_match.group(1))-float(record_match.group(3))*1000))
-        return np.array(filelist)[np.argsort(timestamps)],np.sort(timestamps)[0]
+        return np.array(filelist)[np.argsort(timestamps)],np.sort(timestamps)
 
     def parse(self,filelist):
         # Return error on empty filelist
@@ -251,8 +260,8 @@ class LARParse:
             exit(-1)
         # Process as multiple files from same stream.
         if self.concatenate:
-            filelist,first_record_timestamp = self.sortfiles(filelist)
-            self.stats_init(first_record_timestamp)
+            filelist,self.timestamp_list = self.sortfiles(filelist)
+            self.stats_init(self.timestamp_list[0])
             for filename in filelist:
                 with open(filename,'r') as f:
                     records = f.readlines()
@@ -289,7 +298,8 @@ class LARParse:
                 print(f"Error: File {filename} has 0 timespan. Skipping...\n")
                 continue
             first_record_match = self.stampreg.match(records[0])
-            self.stats_init(int(int(first_record_match.group(1))-float(first_record_match.group(3))*1000))
+            self.timestamp_list = [int(int(first_record_match.group(1))-float(first_record_match.group(3))*1000)]
+            self.stats_init(self.timestamp_list[0])
             for entry in records:
                 info = self.stampreg.match(entry)
                 if info.group(2)=='DANMAKU':
