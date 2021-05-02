@@ -107,6 +107,7 @@ class LARParse:
         self.trend_sc = []
         self.trend_guard = []
         self.trend_pop = []
+        self.trend_pop_count = []
         self.cache_danmaku = deque()
         self.cache_gift_paid = deque()
         self.cache_gift_free = deque()
@@ -133,6 +134,9 @@ class LARParse:
             self.trend_guard.append(0)
         while len(self.trend_pop)<self.max_trend_len:
             self.trend_pop.append(0)
+            self.trend_pop_count.append(0)
+        self.trend_pop_count=np.array(self.trend_pop_count)
+        self.trend_pop_count[self.trend_pop_count==0] = 1
         self.xtick_width=min((self.max_trend_len//200+1)*5,60)
 
     def stats_genreport_text(self,filename):
@@ -200,7 +204,7 @@ class LARParse:
         x=[basetime+dt.timedelta(seconds=i) for i in range(0,(self.max_trend_len)*self.resolution,self.resolution)]
         y0=[0]*len(x)
         y1=np.array(self.trend_danmaku)
-        y6=np.array(self.trend_pop)/(self.resolution/self.POPULARITY_FREQ)
+        y6=np.array(self.trend_pop)/self.trend_pop_count
 
         # Plotting
         rcParams['font.family'] = "WenQuanYi Micro Hei"
@@ -408,7 +412,9 @@ class LARParse:
         self.cache_pop.append((timestamp,meta,popularity))
         while len(self.trend_pop)*self.resolution<(self.abstime-self.abstime_start)/1000:
             self.trend_pop.append(0)
+            self.trend_pop_count.append(0)
         self.trend_pop[(timestamp-self.abstime_start)//1000//self.resolution] += popularity
+        self.trend_pop_count[(timestamp-self.abstime_start)//1000//self.resolution] += 1
 
 if __name__=='__main__':
     pr = LARParse()
